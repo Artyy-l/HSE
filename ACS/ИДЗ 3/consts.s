@@ -1,3 +1,4 @@
-.eqv BUFF_SIZE 512	# ���ѧ٧ާ֧� �ҧ��֧�� �էݧ� ��֧ܧ���
-.eqv PATH_SIZE 64	# ���ѧ٧ާ֧� �ҧ��֧�� �էݧ� �ڧާ֧ߧ� ��ѧۧݧ�
-.eqv NUMBER_SIZE 8	# ���ѧ٧ާ֧� �ҧ��֧�� �էݧ� ��ڧ�ݧ� N
+.eqv MAX_FILE_SIZE 10240 	# Максимальный возможный размер файла
+.eqv BUFF_SIZE 512		# Размер буфера для текста
+.eqv PATH_SIZE 64		# Размер буфера для имени файла
+.eqv NUMBER_SIZE 8		# Размер буфера для числа N
