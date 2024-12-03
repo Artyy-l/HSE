@@ -23,8 +23,6 @@ output_filenames:
         .asciz "../test/output5.txt\0"
 
 msg_enter_N: .asciz "Введите число N: "
-test_success_msg: .asciz "Тест "
-test_success_end: .asciz " выполнен успешно!\n"
 msg_error: .asciz "Произошла ошибка при работе с файлом\n"
 num_tests: .word 5              # Количество тестов
 
