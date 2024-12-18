@@ -6,17 +6,18 @@
 #include <random>
 #include <unistd.h>
 
-std::queue<int> task_portfolio; // Портфель задач: участки леса
+std::queue<int> task_portfolio;  // Портфель задач: участки леса
 pthread_mutex_t portfolio_mutex; // Мьютекс для защиты доступа к портфелю
-bool winnie_found = false; // Флаг нахождения Винни-Пуха
-std::ofstream output_file; // Файл для записи результатов
+pthread_mutex_t cout_mutex;      // Мьютекс для защиты вывода в консоль
+bool winnie_found = false;       // Флаг нахождения Винни-Пуха
+std::ofstream output_file;       // Файл для записи результатов
 
 struct ThreadData {
     int swarm_id;
 };
 
 // Функция поиска Винни-Пуха на участке
-bool search_for_winnie(int section_id) {
+bool search_for_winnie() {
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> dist(1, 100);
@@ -27,8 +28,8 @@ bool search_for_winnie(int section_id) {
 }
 
 // Функция работы стаи пчел
-void* bee_swarm(void* arg) {
-    ThreadData* data = (ThreadData*)arg;
+[[noreturn]] void* bee_swarm(void* arg) {
+    auto* data = (ThreadData*)arg;
     int swarm_id = data->swarm_id;
 
     while (true) {
@@ -38,8 +39,10 @@ void* bee_swarm(void* arg) {
         pthread_mutex_lock(&portfolio_mutex);
         if (winnie_found) {
             pthread_mutex_unlock(&portfolio_mutex);
+            pthread_mutex_lock(&cout_mutex);
             output_file << "Swarm " << swarm_id << ": Winnie the Pooh has already been found. Returning to the hive.\n";
             std::cout << "Swarm " << swarm_id << ": Winnie the Pooh has already been found. Returning to the hive.\n";
+            pthread_mutex_unlock(&cout_mutex);
             pthread_exit(nullptr);
         }
         if (!task_portfolio.empty()) {
@@ -54,20 +57,26 @@ void* bee_swarm(void* arg) {
         }
 
         // Проверяем участок
+        pthread_mutex_lock(&cout_mutex);
         output_file << "Swarm " << swarm_id << " is searching section " << section_id << "...\n";
         std::cout << "Swarm " << swarm_id << " is searching section " << section_id << "...\n";
+        pthread_mutex_unlock(&cout_mutex);
 
-        if (search_for_winnie(section_id)) {
+        if (search_for_winnie()) {
             pthread_mutex_lock(&portfolio_mutex);
             winnie_found = true;
             pthread_mutex_unlock(&portfolio_mutex);
 
+            pthread_mutex_lock(&cout_mutex);
             output_file << "Swarm " << swarm_id << " has found Winnie the Pooh in section " << section_id << "!\n";
             std::cout << "Swarm " << swarm_id << " has found Winnie the Pooh in section " << section_id << "!\n";
+            pthread_mutex_unlock(&cout_mutex);
             pthread_exit(nullptr);
         } else {
+            pthread_mutex_lock(&cout_mutex);
             output_file << "Swarm " << swarm_id << " found nothing in section " << section_id << ". Returning to the hive.\n";
             std::cout << "Swarm " << swarm_id << " found nothing in section " << section_id << ". Returning to the hive.\n";
+            pthread_mutex_unlock(&cout_mutex);
         }
     }
 }
@@ -138,8 +147,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Инициализация мьютекса
+    // Инициализация мьютексов
     pthread_mutex_init(&portfolio_mutex, nullptr);
+    pthread_mutex_init(&cout_mutex, nullptr);
 
     // Запускаем потоки для каждой стаи пчел
     std::vector<pthread_t> threads(num_swarms);
@@ -160,6 +170,7 @@ int main(int argc, char* argv[]) {
 
     // Очистка ресурсов
     pthread_mutex_destroy(&portfolio_mutex);
+    pthread_mutex_destroy(&cout_mutex);
     output_file.close();
 
     return 0;
